@@ -1,0 +1,69 @@
+    //INFO: DYNAMIC COLUMNS 
+    baseColumns = columns;
+    showDynamicColumnSelectionModal = false;
+    dynamicColumnValue = ['suffix', 'race', 'residentialAddress', 'county', 'voterRegNumber'];
+    originalColumns = ['suffix', 'race', 'residentialAddress', 'county', 'voterRegNumber'];
+    dynamicColumnsAvailable = [
+        { label: 'Suffix', value: 'suffix' },
+        { label: 'Race', value: 'race' },
+        { label: 'Residential Address', value: 'residentialAddress' },
+        { label: 'County', value: 'county' },
+        { label: 'Voter Registration Number', value: 'voterRegNumber' }
+    ];
+
+    handleDynamicColumns() {
+        this.showDynamicColumnSelectionModal = true;
+    }
+
+    closeDynamicColumnSelectionModal() {
+        this.showDynamicColumnSelectionModal = false;
+    }
+
+    handleDynamicColumnValueChange(e) {
+        this.dynamicColumnValue = e.detail.value;
+        const removedColumns = this.originalColumns.filter(element => !this.dynamicColumnValue.includes(element));
+        this.addAllColumnsAndRemoveSelected(removedColumns);
+
+    }
+
+    addAllColumnsAndRemoveSelected(removedColumns) {
+        let requiredColumns = [];
+        let addedColumn = [];
+
+        this.baseColumns.forEach(columnsObject => {
+            if (columnsObject.fieldName === undefined || (!removedColumns.includes(columnsObject.fieldName) && !addedColumn.includes(columnsObject.fieldName))) {
+                requiredColumns.push(columnsObject);
+                addedColumn.push(columnsObject.fieldName);
+            }
+        });
+        this.columns = requiredColumns;
+        updateUserHideConfig({listViewPage:'VrChallengedVoterList', selectedConfig:this.dynamicColumnValue}).then(resp => {
+            console.log(resp);
+        }).catch((err) => {
+         showErrorMessage(this, err);
+        }).finally(() => {
+         this.showSpinner = false;
+        });
+    }
+    updateColumnWithHideConfig(){
+        this.showSpinner=true;
+        fetchUserHideConfig({listViewPage:'VrChallengedVoterList'}).then(resp => {
+            if(resp.length>0 && resp[0] != 'unhideAll'){
+                this.dynamicColumnValue = resp;
+                const removedColumns = this.originalColumns.filter(element => !this.dynamicColumnValue.includes(element));
+		        let requiredColumns = [];
+		        let addedColumn = [];
+		        this.baseColumns.forEach(columnsObject => {
+			    if (columnsObject.fieldName === undefined || (!removedColumns.includes(columnsObject.fieldName) && !addedColumn.includes(columnsObject.fieldName))) {
+				    requiredColumns.push(columnsObject);
+				    addedColumn.push(columnsObject.fieldName);
+			    }
+		    });
+		    this.columns = requiredColumns;
+            }
+        }).catch((err) => {
+            showErrorMessage(this, err);
+        }).finally(() => {
+            this.showSpinner = false;
+        });
+    }
