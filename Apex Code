@@ -1,0 +1,58 @@
+
+    @AuraEnabled
+    public static List<String> fetchUserHideConfig(String listViewPage ) {
+        for(User usr: [Select Id,Hide_Unhide_Selected_Columns__c FROM User WHERE Id = :UserInfo.getUserId() LIMIT 1]){
+            try{
+                if(String.isBlank(usr.Hide_Unhide_Selected_Columns__c)){ 
+                    break;
+                }else{
+                    Map<String,List<String>> savedConfig = (Map<String,List<String>>)JSON.deserialize(usr.Hide_Unhide_Selected_Columns__c, Map<String,List<String>>.class);
+                    if(savedConfig.containsKey(listViewPage)){
+                        return savedConfig.get(listViewPage);
+                    }else{   
+                        break;
+                    }
+                }
+            }catch(Exception e){
+                throw new Vr_Exception(e.getMessage());
+            }  
+        }
+        return (new List<String>{'unhideAll'}); 
+    }
+    @AuraEnabled
+    public static String updateUserHideConfig(String listViewPage,List<String> selectedConfig) {
+        List<User> UserList = new List<User>();
+        if(selectedConfig == null){ selectedConfig = new List<String>(); }
+        for(User usr: [Select Id,Hide_Unhide_Selected_Columns__c FROM User WHERE Id = :UserInfo.getUserId() LIMIT 1]){
+                    try{
+                        Map<String,List<String>> configMap = new Map<String,List<String>>();
+                        if(String.isBlank(usr.Hide_Unhide_Selected_Columns__c)){ 
+                            configMap.put(listViewPage,selectedConfig);
+                            usr.Hide_Unhide_Selected_Columns__c = JSON.serialize(configMap);
+                            UserList.add(usr);
+                        }else{
+                            Map<String,List<String>> savedConfig = (Map<String,List<String>>)JSON.deserialize(usr.Hide_Unhide_Selected_Columns__c, Map<String,List<String>>.class);
+                            if(savedConfig.containsKey(listViewPage)){
+                                savedConfig.put(listViewPage,selectedConfig);
+                                usr.Hide_Unhide_Selected_Columns__c = JSON.serialize(savedConfig);
+                                UserList.add(usr);
+                            }else{   
+                                savedConfig.put(listViewPage,selectedConfig);
+                                usr.Hide_Unhide_Selected_Columns__c = JSON.serialize(savedConfig);
+                                UserList.add(usr);
+                            }
+                        }
+                    }catch(Exception e){
+                        throw new Vr_Exception(e.getMessage());
+                    } 
+        }
+        try{
+            if(UserList.size()>0){
+                update UserList;
+                return 'success';
+            }
+        }catch(Exception e){
+                throw new Vr_Exception(e.getMessage());
+        }
+        return 'error';        
+    }
